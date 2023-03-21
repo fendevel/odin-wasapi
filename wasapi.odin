@@ -2,10 +2,15 @@ package wasapi
 import "vendor:directx/dxgi"
 import "core:sys/windows"
 
+E_NOTFOUND :: 1168
+E_UNSUPPORTED_TYPE :: 1630
+
 CLSCTX_ALL :: windows.CLSCTX_INPROC_SERVER | windows.CLSCTX_INPROC_HANDLER | windows.CLSCTX_LOCAL_SERVER | windows.CLSCTX_REMOTE_SERVER
 CLSID_MMDeviceEnumerator := windows.GUID{0xBCDE0395, 0xE52F, 0x467C, {0x8E, 0x3D, 0xC4, 0x57, 0x92, 0x91, 0x69, 0x2E}}
 
 REFERENCE_TIME :: i64
+
+DEVICE_STATE :: enum { ACTIVE, DISABLED, NOTPRESENT, UNPLUGGED, }
 
 PROPVARIANT :: distinct rawptr
 
@@ -42,7 +47,7 @@ IMMDevice_VTable :: struct {
     Activate: proc "stdcall" (this: ^IMMDevice, iid: windows.REFIID, dwClsCtx: windows.DWORD, pActivateParams: ^PROPVARIANT, ppInterface: ^rawptr) -> windows.HRESULT,
     OpenPropertyStore: proc "stdcall" (this: ^IMMDevice, stgmAccess: windows.DWORD, ppProperties: ^IPropertyStore) -> windows.HRESULT,
     GetId: proc "stdcall" (this: ^IMMDevice, ppstrId: windows.LPWSTR) -> windows.HRESULT,
-    GetState: proc "stdcall" (this: ^IMMDevice, pwState: ^windows.DWORD) -> windows.HRESULT,
+    GetState: proc "stdcall" (this: ^IMMDevice, pwState: ^DEVICE_STATE) -> windows.HRESULT,
 }
 
 IMMDeviceCollection_UUID_STRING :: "0BD7A1BE-7A1A-44DB-8397-CC5392387B5E"
@@ -67,7 +72,7 @@ IMMDeviceEnumerator :: struct #raw_union {
 
 IMMDeviceEnumerator_VTable :: struct {
     using iunknown_vtable: dxgi.IUnknown_VTable,
-    EnumAudioEndpoints: proc "stdcall" (this: ^IMMDeviceEnumerator, dataFlow: EDataFlow, dwStateMask: windows.DWORD, ppDevices: ^^IMMDeviceCollection) -> windows.HRESULT,
+    EnumAudioEndpoints: proc "stdcall" (this: ^IMMDeviceEnumerator, dataFlow: EDataFlow, dwStateMask: bit_set[DEVICE_STATE; windows.DWORD], ppDevices: ^^IMMDeviceCollection) -> windows.HRESULT,
     GetDefaultAudioEndpoint: proc "stdcall" (this: ^IMMDeviceEnumerator, dataFlow: EDataFlow, role: ERole, ppEndpoint: ^^IMMDevice) -> windows.HRESULT,
     GetDevice: proc "stdcall" (this: ^IMMDeviceEnumerator, pwstr: windows.LPWSTR, ppDevice: ^^IMMDevice) -> windows.HRESULT,
     RegisterEndpointNotificationCallback: proc "stdcall" (this: ^IMMDeviceEnumerator, pClient: rawptr) -> windows.HRESULT,
